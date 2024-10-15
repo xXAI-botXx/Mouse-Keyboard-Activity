@@ -6,7 +6,7 @@ import random
 import threading
 
 import pyautogui
-from pynput.keyboard import Listener
+import pynput
 
 # Variables -> Change nothing here!!!
 class PRESS_EVENT(Enum):
@@ -92,34 +92,44 @@ class PRESS_EVENT(Enum):
     def execute(self):
         self.value()
 
+PICKED_POSITION = False
+
 
 ##########################################################
 # CHANGABLE THESE VARIABLES IF YOU WANT RUN THIS main.py #
 ##########################################################
 
-press_event = PRESS_EVENT.LEFT_CLICK    # - press_event: PRESS_EVENT Enum or None Value for defining key to press
-rel_pos_x = 0.75    # - rel_pos_x: Float x position of the event in percentage (0.0 - 1.0)
-rel_pos_y = 0.05    # - rel_pos_y: Float y position of the event in percentage (0.0 - 1.0)
-time_fire_minutes = 0.6 # 60.0    # - time_fire_minutes: Float minutes before the next event press fires
-timeout = None    # - timeout: None or Float value in minutes for quitting the program after the given minutes
-use_random_walk = True    # - random_walk_activated: Boolean if the mouse should be random moving between the press events
-time_buffer = 5.0    # - time_buffer: Float seconds to wait between every loop
+press_event = PRESS_EVENT.LEFT_CLICK    # PRESS_EVENT Enum or None Value for defining key to press
+pick_position = True    # Boolean decides whether to pick a position or use the given position
+rel_pos_x = 0.75    # Float x position of the event in percentage (0.0 - 1.0)
+rel_pos_y = 0.05    # Float y position of the event in percentage (0.0 - 1.0)
+start_time_buffer = 3.0    # Float in seconds after starting/picking a position first starts the program after the given seconds
+time_fire_minutes = 60.0    # Float minutes before the next event press fires
+timeout = None    # None or Float value in minutes for quitting the program after the given minutes
+use_random_walk = True    # Boolean if the mouse should be random moving between the press events
+time_buffer = 5.0    # Float seconds to wait between every loop
 
 ##########################################################
 
 
 # listens keyboard
 def start_listener():
-    with Listener(on_release=on_release) as listener:
+    with pynput.keyboard.Listener(on_release=keyboard_listener_func) as listener:
         listener.join()
 
-def on_release(key):
+def keyboard_listener_func(key):
     try:
         if key.char == "q":
-            sys.exit(-1)
+            sys.exit(0)
             print(f"\n\nQuitting because you ended the program! ({get_current_time_as_string()})\nI hope you was successfull :)")
     except AttributeError:
         pass
+
+def mouse_listener_func(x, y, button, pressed):
+    if pressed:
+        print(f"Mouse clicked at ({x}, {y}) with {button}")
+        if button == pynput.mouse.Button.left or button == pynput.mouse.Button.right:
+            return False  # stops the listener
 
 def get_current_time_as_string():
     now = datetime.now()
@@ -128,13 +138,27 @@ def get_current_time_as_string():
 def random_float(min, max):
     return (random.random()*(max-min))+min
 
-def mouse_activity(press_event:PRESS_EVENT, rel_pos_x=0.0, rel_pos_y=0.0, time_fire_minutes=60, timeout=None, random_walk_activated=True, time_buffer=1.0):
+def mouse_activity(press_event:PRESS_EVENT, 
+                   pick_position=True, 
+                   rel_pos_x=0.0, 
+                   rel_pos_y=0.0, 
+                   start_time_buffer=3.0, 
+                   time_fire_minutes=60, 
+                   timeout=None, 
+                   random_walk_activated=True, 
+                   time_buffer=1.0):
     """
-    Presses a key or mouse button every X minutes. Can move the mouse during the time between.
+    When starting the picker
+    Presses a key or mouse b
+    When starting the pickerutton every X minutes. Can move the mouse during the time between.
+
+    When starting the picker, you have to move your mouse to the goal position and press left mouse or right mouse button.
 
     - press_event: PRESS_EVENT Enum or None Value for defining key to press
+    - pick_position: Boolean decides whether to pick a position or use the given position
     - rel_pos_x: Float x position of the event in percentage (0.0 - 1.0)
     - rel_pos_y: Float y position of the event in percentage (0.0 - 1.0)
+    - start_time_buffer: Float in seconds after starting/picking a position first starts the program after the given seconds
     - time_fire_minutes: Float minutes before the next event press fires
     - timeout: None or Float value in minutes for quitting the program after the given minutes
     - random_walk_activated: Boolean if the mouse should be random moving between the press events
@@ -147,8 +171,18 @@ def mouse_activity(press_event:PRESS_EVENT, rel_pos_x=0.0, rel_pos_y=0.0, time_f
     # get screen-size and define goal position
     screen_width, screen_height = pyautogui.size()
 
-    goal_x = rel_pos_x * (screen_width-1)
-    goal_y = rel_pos_y * (screen_height-1)
+    if pick_position:
+        print("Picking now the position...\n    -> Move your mouse to the goal position and press left mouse or right mouse button.")
+
+        # waiting for picking
+        with pynput.keyboard.Listener(on_release=mouse_listener_func) as listener:
+            listener.join()
+
+        goal_x, goal_y = pyautogui.position()
+    else:
+        goal_x = rel_pos_x * (screen_width-1)
+        goal_y = rel_pos_y * (screen_height-1)
+    print(f"Goal Position: {goal_x}/{goal_y}")
 
     # start keyboard listener for quitting the program
     listener_thread = threading.Thread(target=start_listener)
@@ -161,13 +195,19 @@ def mouse_activity(press_event:PRESS_EVENT, rel_pos_x=0.0, rel_pos_y=0.0, time_f
     last_fire = start_time = time()
     cur_random_walk_direction = [random_float(min=-1, max=1), random_float(min=-1, max=1)]
 
+    # wait for beginning
+    print(f"Program starts in round about {start_time_buffer} seconds.")
+    while time() - start_time < start_time_buffer:
+        sleep(0.1)
+
     # start program loop
     print(f"starts running the activity every {time_fire_minutes} minutes. ({get_current_time_as_string()})")
     while SHOULD_RUN:
+
         # check if timeout
         if timeout is not None and (time()-start_time)/60 >= timeout:
             print(f"Quitting because timeout reached! ({get_current_time_as_string()})")
-            sys.exit(-1)
+            sys.exit(0)
 
         # check if should fire now
         cur_time_diff = (time() - last_fire) / 60

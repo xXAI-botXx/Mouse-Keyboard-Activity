@@ -16,7 +16,12 @@ You choose which key/mouse-button should be pressed on which minute with what ti
 4. set the mode variable in the main file
 5. run the main.py
 
-
+Conda Installation:
+```terminal
+conda create -n "mka"
+conda install pyautogui
+conda install pynput
+```
 
 
 

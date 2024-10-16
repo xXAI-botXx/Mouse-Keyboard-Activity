@@ -6,9 +6,10 @@ import random
 import threading
 
 import pyautogui
-import pynput
+from pynput import mouse
+from pynput import keyboard
 
-# Variables -> Change nothing here!!!
+# Variables -> Change nothing here!!! Scroll a bit down :)
 class PRESS_EVENT(Enum):
     # Letters
     A = lambda: pyautogui.press('a')
@@ -27,7 +28,7 @@ class PRESS_EVENT(Enum):
     N = lambda: pyautogui.press('n')
     O = lambda: pyautogui.press('o')
     P = lambda: pyautogui.press('p')
-    # Q = lambda: pyautogui.press('q') # Q is needed for quitting
+    Q = lambda: pyautogui.press('q') 
     R = lambda: pyautogui.press('r')
     S = lambda: pyautogui.press('s')
     T = lambda: pyautogui.press('t')
@@ -68,7 +69,7 @@ class PRESS_EVENT(Enum):
     SPACE = lambda: pyautogui.press('space')
     ENTER = lambda: pyautogui.press('enter')
     TAB = lambda: pyautogui.press('tab')
-    ESC = lambda: pyautogui.press('esc')
+    # ESC = lambda: pyautogui.press('esc') # Escape key is needed for quitting
     BACKSPACE = lambda: pyautogui.press('backspace')
     DELETE = lambda: pyautogui.press('delete')
     SHIFT = lambda: pyautogui.press('shift')
@@ -88,11 +89,8 @@ class PRESS_EVENT(Enum):
     DOUBLE_CLICK = lambda: pyautogui.doubleClick()
     SCROLL_UP = lambda: pyautogui.scroll(10)  # Scroll up
     SCROLL_DOWN = lambda: pyautogui.scroll(-10)  # Scroll down
-    
-    def execute(self):
-        self.value()
 
-PICKED_POSITION = False
+SHOULD_RUN = True
 
 
 ##########################################################
@@ -103,7 +101,7 @@ press_event = PRESS_EVENT.LEFT_CLICK    # PRESS_EVENT Enum or None Value for def
 pick_position = True    # Boolean decides whether to pick a position or use the given position
 rel_pos_x = 0.75    # Float x position of the event in percentage (0.0 - 1.0)
 rel_pos_y = 0.05    # Float y position of the event in percentage (0.0 - 1.0)
-start_time_buffer = 3.0    # Float in seconds after starting/picking a position first starts the program after the given seconds
+start_time_buffer = 5.0    # Float in seconds after starting/picking a position first starts the program after the given seconds
 time_fire_minutes = 60.0    # Float minutes before the next event press fires
 timeout = None    # None or Float value in minutes for quitting the program after the given minutes
 use_random_walk = True    # Boolean if the mouse should be random moving between the press events
@@ -112,15 +110,11 @@ time_buffer = 5.0    # Float seconds to wait between every loop
 ##########################################################
 
 
-# listens keyboard
-def start_listener():
-    with pynput.keyboard.Listener(on_release=keyboard_listener_func) as listener:
-        listener.join()
-
 def keyboard_listener_func(key):
+    global SHOULD_RUN
     try:
-        if key.char == "q":
-            sys.exit(0)
+        if key == keyboard.Key.esc:
+            SHOULD_RUN = False
             print(f"\n\nQuitting because you ended the program! ({get_current_time_as_string()})\nI hope you was successfull :)")
     except AttributeError:
         pass
@@ -128,7 +122,7 @@ def keyboard_listener_func(key):
 def mouse_listener_func(x, y, button, pressed):
     if pressed:
         print(f"Mouse clicked at ({x}, {y}) with {button}")
-        if button == pynput.mouse.Button.left or button == pynput.mouse.Button.right:
+        if button == mouse.Button.left or button == mouse.Button.right:
             return False  # stops the listener
 
 def get_current_time_as_string():
@@ -137,6 +131,12 @@ def get_current_time_as_string():
 
 def random_float(min, max):
     return (random.random()*(max-min))+min
+
+def update_random_walk():
+    cur_random_walk_direction = [random_float(min=-1, max=1), random_float(min=-1, max=1)]
+    cur_random_walk_direction[0] = cur_random_walk_direction[0] + 1 if cur_random_walk_direction[0] >= 0 else cur_random_walk_direction[0] - 1
+    cur_random_walk_direction[1] = cur_random_walk_direction[1] + 1 if cur_random_walk_direction[1] >= 0 else cur_random_walk_direction[1] - 1
+    return cur_random_walk_direction  
 
 def mouse_activity(press_event:PRESS_EVENT, 
                    pick_position=True, 
@@ -164,6 +164,7 @@ def mouse_activity(press_event:PRESS_EVENT,
     - random_walk_activated: Boolean if the mouse should be random moving between the press events
     - time_buffer: Float seconds to wait between every loop
     """
+    global SHOULD_RUN
 
     print(f"Welcome to the Mouse-Activity Program! ({get_current_time_as_string()})")
     print("init activity...")
@@ -175,7 +176,7 @@ def mouse_activity(press_event:PRESS_EVENT,
         print("Picking now the position...\n    -> Move your mouse to the goal position and press left mouse or right mouse button.")
 
         # waiting for picking
-        with pynput.keyboard.Listener(on_release=mouse_listener_func) as listener:
+        with mouse.Listener(on_click=mouse_listener_func) as listener:
             listener.join()
 
         goal_x, goal_y = pyautogui.position()
@@ -184,16 +185,15 @@ def mouse_activity(press_event:PRESS_EVENT,
         goal_y = rel_pos_y * (screen_height-1)
     print(f"Goal Position: {goal_x}/{goal_y}")
 
-    # start keyboard listener for quitting the program
-    listener_thread = threading.Thread(target=start_listener)
-    listener_thread.start()
+    escape_listener = keyboard.Listener(on_release=keyboard_listener_func)
+    escape_listener.start()
 
     # set init values
     pyautogui.FAILSAFE = False
     SHOULD_RUN = True
     fire = False
     last_fire = start_time = time()
-    cur_random_walk_direction = [random_float(min=-1, max=1), random_float(min=-1, max=1)]
+    cur_random_walk_direction = update_random_walk()
 
     # wait for beginning
     print(f"Program starts in round about {start_time_buffer} seconds.")
@@ -217,31 +217,30 @@ def mouse_activity(press_event:PRESS_EVENT,
 
         if fire:
             # move to goal position
-            print("CHECKPOINT 1")
             pyautogui.moveTo(goal_x, goal_y, duration=1) 
             cur_x, cur_y = pyautogui.position()
-            print("CHECKPOINT 2")
+
             while cur_x != goal_x and cur_y != goal_y:
                 sleep(0.5)
-
-            print("CHECKPOINT 3")
+                pyautogui.moveTo(goal_x, goal_y, duration=1) 
+                cur_x, cur_y = pyautogui.position()
 
             # press button
             if press_event is not None:
-                press_event.execute()
+                press_event()
 
             fire = False
             print(f"Fired! ({get_current_time_as_string()})")
 
-            cur_random_walk_direction = [random_float(min=-1, max=1), random_float(min=-1, max=1)]
+            cur_random_walk_direction = update_random_walk()
 
         # random walk
         if random_walk_activated:
             x, y = pyautogui.position()
             if (x <= 0 or x >= screen_width-1) or (y <= 0 or y >= screen_height-1):
-                cur_random_walk_direction = [random_float(min=-1, max=1), random_float(min=-1, max=1)]
-            else:
-                pyautogui.moveRel(screen_width*0.05*cur_random_walk_direction[0], screen_height*0.005*cur_random_walk_direction[0], duration=1) 
+                cur_random_walk_direction = update_random_walk()
+                
+            pyautogui.moveRel(screen_width*0.1*cur_random_walk_direction[0], screen_height*0.1*cur_random_walk_direction[0], duration=1) 
 
         sleep(time_buffer)
 

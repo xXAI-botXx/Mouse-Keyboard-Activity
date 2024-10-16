@@ -4,7 +4,7 @@ With this project you can keep your process alive.
 
 You choose which key/mouse-button should be pressed on which minute with what time limit and on which screen position. Also can activate a random walk of the mouse during the time to the next press-event.
 
-**Press the Escape-Button ('esc') or the 'Alt' for quitting the program.**
+**Press the Escape-Button ('esc') or the 'shift' for quitting the program.**
 
 
 

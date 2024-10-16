@@ -74,7 +74,7 @@ class PRESS_EVENT(Enum):
     DELETE = lambda: pyautogui.press('delete')
     SHIFT = lambda: pyautogui.press('shift')
     CTRL = lambda: pyautogui.press('ctrl')
-    ALT = lambda: pyautogui.press('alt')
+    # ALT = lambda: pyautogui.press('alt') # alt key is needed for quitting
     
     # Arrow keys
     LEFT_ARROW = lambda: pyautogui.press('left')
@@ -113,7 +113,7 @@ time_buffer = 5.0    # Float seconds to wait between every loop
 def keyboard_listener_func(key):
     global SHOULD_RUN
     try:
-        if key == keyboard.Key.esc:
+        if key == keyboard.Key.esc or key == keyboard.Key.alt:
             SHOULD_RUN = False
             print(f"\n\nQuitting because you ended the program! ({get_current_time_as_string()})\nI hope you was successfull :)")
     except AttributeError:

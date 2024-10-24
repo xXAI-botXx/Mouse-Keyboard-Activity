@@ -240,7 +240,7 @@ def mouse_activity(press_event:PRESS_EVENT,
             if (x <= 0 or x >= screen_width-1) or (y <= 0 or y >= screen_height-1):
                 cur_random_walk_direction = update_random_walk()
                 
-            pyautogui.moveRel(screen_width*0.1*cur_random_walk_direction[0], screen_height*0.1*cur_random_walk_direction[0], duration=1) 
+            pyautogui.moveRel(screen_width*0.1*cur_random_walk_direction[0], screen_height*0.1*cur_random_walk_direction[1], duration=1) 
 
         sleep(time_buffer)
 

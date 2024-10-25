@@ -138,6 +138,12 @@ def update_random_walk():
     cur_random_walk_direction[1] = cur_random_walk_direction[1] + 1 if cur_random_walk_direction[1] >= 0 else cur_random_walk_direction[1] - 1
     return cur_random_walk_direction  
 
+def get_random_pos():
+    screen_width, screen_height = pyautogui.size()
+    screen_width -= 1
+    screen_height -= 1
+    return [random.randint(0, screen_width), random.randint(0, screen_height)]
+
 def mouse_activity(press_event:PRESS_EVENT, 
                    pick_position=True, 
                    rel_pos_x=0.0, 
@@ -232,15 +238,22 @@ def mouse_activity(press_event:PRESS_EVENT,
             fire = False
             print(f"Fired! ({get_current_time_as_string()})")
 
-            cur_random_walk_direction = update_random_walk()
+            # cur_random_walk_direction = update_random_walk()
+            cur_random_goal = get_random_pos()
 
         # random walk
         if random_walk_activated:
             x, y = pyautogui.position()
-            if (x <= 0 or x >= screen_width-1) or (y <= 0 or y >= screen_height-1):
-                cur_random_walk_direction = update_random_walk()
+
+            if x==cur_random_goal[0] and y==cur_random_goal[1]:
+                cur_random_goal = cur_random_goal = get_random_pos()
+
+            pyautogui.moveTo(cur_random_goal[0], cur_random_goal[1], duration=1) 
+        
+            # if (x <= 0 or x >= screen_width-1) or (y <= 0 or y >= screen_height-1):
+            #     cur_random_walk_direction = update_random_walk()
                 
-            pyautogui.moveRel(screen_width*0.1*cur_random_walk_direction[0], screen_height*0.1*cur_random_walk_direction[1], duration=1) 
+            # pyautogui.moveRel(screen_width*0.1*cur_random_walk_direction[0], screen_height*0.1*cur_random_walk_direction[1], duration=1) 
 
         sleep(time_buffer)
 

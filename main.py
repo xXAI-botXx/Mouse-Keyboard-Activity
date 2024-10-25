@@ -8,6 +8,8 @@ import threading
 import pyautogui
 from pynput import mouse
 from pynput import keyboard
+from pynput.keyboard import Key, KeyCode
+from pynput.mouse import Button
 
 # Variables -> Change nothing here!!! Scroll a bit down :)
 class PRESS_EVENT(Enum):
@@ -72,8 +74,8 @@ class PRESS_EVENT(Enum):
     # ESC = lambda: pyautogui.press('esc') # Escape key is needed for quitting
     BACKSPACE = lambda: pyautogui.press('backspace')
     DELETE = lambda: pyautogui.press('delete')
-    # SHIFT = lambda: pyautogui.press('shift')    # is needed for quitting
-    CTRL = lambda: pyautogui.press('ctrl')
+    SHIFT = lambda: pyautogui.press('shift')
+    STRG = lambda: pyautogui.press('ctrl')
     ALT = lambda: pyautogui.press('alt')
     
     # Arrow keys
@@ -90,6 +92,90 @@ class PRESS_EVENT(Enum):
     SCROLL_UP = lambda: pyautogui.scroll(10)  # Scroll up
     SCROLL_DOWN = lambda: pyautogui.scroll(-10)  # Scroll down
 
+def press_event_to_key(event_: PRESS_EVENT):
+    """
+    Maps a PRESS_EVENT to a corresponding keyboard Key or KeyCode.
+    """
+    # Mapping PRESS_EVENT items to keyboard keys
+    key_mapping = {
+        PRESS_EVENT.A: KeyCode.from_char('a'),
+        PRESS_EVENT.B: KeyCode.from_char('b'),
+        PRESS_EVENT.C: KeyCode.from_char('c'),
+        PRESS_EVENT.D: KeyCode.from_char('d'),
+        PRESS_EVENT.E: KeyCode.from_char('e'),
+        PRESS_EVENT.F: KeyCode.from_char('f'),
+        PRESS_EVENT.G: KeyCode.from_char('g'),
+        PRESS_EVENT.H: KeyCode.from_char('h'),
+        PRESS_EVENT.I: KeyCode.from_char('i'),
+        PRESS_EVENT.J: KeyCode.from_char('j'),
+        PRESS_EVENT.K: KeyCode.from_char('k'),
+        PRESS_EVENT.L: KeyCode.from_char('l'),
+        PRESS_EVENT.M: KeyCode.from_char('m'),
+        PRESS_EVENT.N: KeyCode.from_char('n'),
+        PRESS_EVENT.O: KeyCode.from_char('o'),
+        PRESS_EVENT.P: KeyCode.from_char('p'),
+        PRESS_EVENT.Q: KeyCode.from_char('q'),
+        PRESS_EVENT.R: KeyCode.from_char('r'),
+        PRESS_EVENT.S: KeyCode.from_char('s'),
+        PRESS_EVENT.T: KeyCode.from_char('t'),
+        PRESS_EVENT.U: KeyCode.from_char('u'),
+        PRESS_EVENT.V: KeyCode.from_char('v'),
+        PRESS_EVENT.W: KeyCode.from_char('w'),
+        PRESS_EVENT.X: KeyCode.from_char('x'),
+        PRESS_EVENT.Y: KeyCode.from_char('y'),
+        PRESS_EVENT.Z: KeyCode.from_char('z'),
+        
+        # Numbers
+        PRESS_EVENT.NUM_0: KeyCode.from_char('0'),
+        PRESS_EVENT.NUM_1: KeyCode.from_char('1'),
+        PRESS_EVENT.NUM_2: KeyCode.from_char('2'),
+        PRESS_EVENT.NUM_3: KeyCode.from_char('3'),
+        PRESS_EVENT.NUM_4: KeyCode.from_char('4'),
+        PRESS_EVENT.NUM_5: KeyCode.from_char('5'),
+        PRESS_EVENT.NUM_6: KeyCode.from_char('6'),
+        PRESS_EVENT.NUM_7: KeyCode.from_char('7'),
+        PRESS_EVENT.NUM_8: KeyCode.from_char('8'),
+        PRESS_EVENT.NUM_9: KeyCode.from_char('9'),
+        
+        # Function keys
+        PRESS_EVENT.F1: Key.f1,
+        PRESS_EVENT.F2: Key.f2,
+        PRESS_EVENT.F3: Key.f3,
+        PRESS_EVENT.F4: Key.f4,
+        PRESS_EVENT.F5: Key.f5,
+        PRESS_EVENT.F6: Key.f6,
+        PRESS_EVENT.F7: Key.f7,
+        PRESS_EVENT.F8: Key.f8,
+        PRESS_EVENT.F9: Key.f9,
+        PRESS_EVENT.F10: Key.f10,
+        PRESS_EVENT.F11: Key.f11,
+        PRESS_EVENT.F12: Key.f12,
+        
+        # Special keys
+        PRESS_EVENT.SPACE: Key.space,
+        PRESS_EVENT.ENTER: Key.enter,
+        PRESS_EVENT.TAB: Key.tab,
+        PRESS_EVENT.BACKSPACE: Key.backspace,
+        PRESS_EVENT.DELETE: Key.delete,
+        PRESS_EVENT.SHIFT: Key.shift,
+        PRESS_EVENT.STRG: Key.ctrl,
+        PRESS_EVENT.ALT: Key.alt,
+        
+        # Arrow keys
+        PRESS_EVENT.LEFT_ARROW: Key.left,
+        PRESS_EVENT.RIGHT_ARROW: Key.right,
+        PRESS_EVENT.UP_ARROW: Key.up,
+        PRESS_EVENT.DOWN_ARROW: Key.down,
+
+        # Mouse button mappings
+        PRESS_EVENT.LEFT_CLICK: Button.left,
+        PRESS_EVENT.RIGHT_CLICK: Button.right,
+        PRESS_EVENT.MIDDLE_CLICK: Button.middle,
+    }
+    
+    return key_mapping.get(event_, None)
+
+
 SHOULD_RUN = True
 
 
@@ -98,6 +184,7 @@ SHOULD_RUN = True
 ##########################################################
 
 press_event = PRESS_EVENT.LEFT_CLICK    # PRESS_EVENT Enum or None Value for defining key to press
+cancel_event = PRESS_EVENT.STRG
 pick_position = True    # Boolean decides whether to pick a position or use the given position
 rel_pos_x = 0.75    # Float x position of the event in percentage (0.0 - 1.0)
 rel_pos_y = 0.05    # Float y position of the event in percentage (0.0 - 1.0)
@@ -112,8 +199,13 @@ time_buffer = 5.0    # Float seconds to wait between every loop
 
 def keyboard_listener_func(key):
     global SHOULD_RUN
+    global cancel_event
     try:
-        if key == keyboard.Key.esc or key == keyboard.Key.shift:
+        if key == Key.ctrl_l or key == Key.ctrl_r:
+            key = Key.ctrl
+        # print(f"Result:{press_event_to_key(cancel_event)}")
+        # print(f"You pressed:{key}\n")
+        if key == keyboard.Key.esc or key == press_event_to_key(cancel_event):
             SHOULD_RUN = False
             print(f"\n\nQuitting because you ended the program! ({get_current_time_as_string()})\nI hope you was successfull :)")
     except AttributeError:
@@ -199,7 +291,8 @@ def mouse_activity(press_event:PRESS_EVENT,
     SHOULD_RUN = True
     fire = False
     last_fire = start_time = time()
-    cur_random_walk_direction = update_random_walk()
+    # cur_random_walk_direction = update_random_walk()
+    cur_random_goal = get_random_pos()
 
     # wait for beginning
     print(f"Program starts in round about {start_time_buffer} seconds.")
@@ -248,7 +341,7 @@ def mouse_activity(press_event:PRESS_EVENT,
             if x==cur_random_goal[0] and y==cur_random_goal[1]:
                 cur_random_goal = cur_random_goal = get_random_pos()
 
-            pyautogui.moveTo(cur_random_goal[0], cur_random_goal[1], duration=1) 
+            pyautogui.moveTo(cur_random_goal[0], cur_random_goal[1], duration=2) 
         
             # if (x <= 0 or x >= screen_width-1) or (y <= 0 or y >= screen_height-1):
             #     cur_random_walk_direction = update_random_walk()

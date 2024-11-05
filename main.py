@@ -184,7 +184,7 @@ SHOULD_RUN = True
 ##########################################################
 
 press_event = PRESS_EVENT.LEFT_CLICK    # PRESS_EVENT Enum or None Value for defining key to press
-cancel_event = PRESS_EVENT.STRG
+cancel_event = PRESS_EVENT.STRG         # PRESS_EVENT Use only keyboard events for this, it will define the cancel condition
 pick_position = True    # Boolean decides whether to pick a position or use the given position
 rel_pos_x = 0.75    # Float x position of the event in percentage (0.0 - 1.0)
 rel_pos_y = 0.05    # Float y position of the event in percentage (0.0 - 1.0)
@@ -359,7 +359,8 @@ if __name__ == "__main__":
         time_fire_minutes=time_fire_minutes,
         timeout=timeout,
         random_walk_activated=use_random_walk,
-        time_buffer=time_buffer
+        time_buffer=time_buffer,
+        start_time_buffer=start_time_buffer
     )
 
 

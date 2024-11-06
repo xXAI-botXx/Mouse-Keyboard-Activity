@@ -186,6 +186,7 @@ SHOULD_RUN = True
 press_event = PRESS_EVENT.LEFT_CLICK    # PRESS_EVENT Enum or None Value for defining key to press
 cancel_event = PRESS_EVENT.STRG         # PRESS_EVENT Use only keyboard events for this, it will define the cancel condition
 pick_position = True    # Boolean decides whether to pick a position or use the given position
+clicks_before_picking = 1    # Defines the amount ofclicks before picking the position
 rel_pos_x = 0.75    # Float x position of the event in percentage (0.0 - 1.0)
 rel_pos_y = 0.05    # Float y position of the event in percentage (0.0 - 1.0)
 start_time_buffer = 5.0    # Float in seconds after starting/picking a position first starts the program after the given seconds
@@ -272,10 +273,17 @@ def mouse_activity(press_event:PRESS_EVENT,
 
     if pick_position:
         print("Picking now the position...\n    -> Move your mouse to the goal position and press left mouse or right mouse button.")
+        print(f"You have {clicks_before_picking} mouse clicks before picking.")
+
+        # pre-clicking
+        for i in range(clicks_before_picking):
+            with mouse.Listener(on_click=mouse_listener_func) as listener:
+                listener.join()
+            print(f"You have {clicks_before_picking-(i+1)} mouse clicks before picking.")
 
         # waiting for picking
         with mouse.Listener(on_click=mouse_listener_func) as listener:
-            listener.join()
+                listener.join()
 
         goal_x, goal_y = pyautogui.position()
     else:
